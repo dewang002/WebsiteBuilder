@@ -1,9 +1,12 @@
-import { Button } from "@/src/components/ui/button";
 
-export default function Home() {
+import { caller } from "@/src/trpc/server";
+
+export default async function page() {
+  const data = await caller.hello({text:"wang"})
+
   return (
     <div className="text-sm">
-      <Button variant={"new"}>click</Button>
+      {JSON.stringify(data)}
     </div>
   );
 }
