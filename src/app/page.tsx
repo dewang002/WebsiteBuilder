@@ -1,12 +1,16 @@
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { getQueryClient, trpc } from "../trpc/server";
+import { Suspense } from "react";
+import Client from "./Client";
 
-import { caller } from "@/src/trpc/server";
-
-export default async function page() {
-  const data = await caller.hello({text:"wang"})
-
+export default async function page() { 
+  const queryClient = getQueryClient()
+  void queryClient.prefetchQuery(trpc.hello.queryOptions({text: 'dewang'}))
   return (
-    <div className="text-sm">
-      {JSON.stringify(data)}
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <Suspense fallback={<p>loading...</p>}>
+        <Client />
+      </Suspense>
+    </HydrationBoundary>
   );
 }
