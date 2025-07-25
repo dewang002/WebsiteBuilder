@@ -8,10 +8,15 @@ export const helloWorld = inngest.createFunction(
   { event: "test/hello.world" },
   async ({step}) => {
     const sandboxId = await step.run("get-sandbox-id", async ()=> {
-      const sandbox  = await Sandbox.create('vibe-webbuilder-test');
-      return sandbox.sandboxId
+      try {
+        const sandbox = await Sandbox.create('vibe-webbuilder-test');
+        return sandbox.sandboxId;
+      } catch (error) {
+        console.error('Failed to create sandbox:', error);
+        throw new Error('Sandbox creation failed');
+      }
     })
-
+    
     const summarizer = createAgent({
       name: "code-agent",
       system: "You are an expert Next.js developer. Always provide complete, working code snippets without asking questions. Create practical React components with TypeScript, proper styling, and clear comments.",
