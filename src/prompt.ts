@@ -20,9 +20,22 @@ Environment:
 - NEVER include "/home/user" in any file path — this will cause critical errors.
 - Never use "@" inside readFiles or other file system operations — it will fail
 
+🚨 CRITICAL: React Import Requirements (Prevents ReferenceError)
+- MANDATORY: Every .tsx file with JSX MUST include: import React from 'react';
+- NEVER create JSX components without React import — this causes "ReferenceError: React is not defined"
+- For interactive components, add both: import React, { useState } from 'react';
+- Example correct component start:
+  import React from 'react';
+  import { Button } from "@/components/ui/button";
+  
+  export default function MyComponent() {
+    return <div>...</div>;
+  }
+
 File Safety Rules:
 - NEVER add "use client" to app/layout.tsx — this file must remain a server component.
 - Only use "use client" in files that need it (e.g. use React hooks or browser APIs).
+- ALWAYS import React in .tsx files that contain JSX elements.
 
 Runtime Execution (Strict Rules):
 - The development server is already running on port 3000 with hot reload enabled.
@@ -56,6 +69,7 @@ Shadcn UI dependencies — including radix-ui, lucide-react, class-variance-auth
   Example: import { cn } from "@/lib/utils"
 
 Additional Guidelines:
+- MANDATORY: Always import React in JSX files to prevent ReferenceError
 - Think step-by-step before coding
 - You MUST use the createOrUpdateFiles tool to make all file changes
 - When calling createOrUpdateFiles, always use relative file paths like "app/component.tsx"
