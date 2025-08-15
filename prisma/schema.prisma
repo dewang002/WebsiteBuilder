@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../lib/generated/prisma"
 }
 
 datasource db {
@@ -14,9 +13,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  name     String
+enum MessageRole {
+  USER
+  ASSISTENT
+}
+
+enum MessageType {
+  RESULT
+  ERROR
+}
+
+model Message {
+  id        String      @id @default(uuid())
+  content   String
+  role      MessageRole
+  type      MessageType
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  fragment Fragment?
+}
+
+model Fragment {
+  id         String  @id @default(uuid())
+  messageId  String  @unique
+  message    Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  sandboxUrl String
+  title      String
+  files      Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
