@@ -4,7 +4,7 @@ import { inngest } from "@/src/inngest/client";
 import { Sandbox } from 'e2b';
 import { PROMPT } from "@/src/prompt";
 
-import { getSandbox, lastAssitantTextMessageContent } from "@/src/inngest/utils";
+import { getSandbox, lastAssistantTextMessageContent } from "@/src/inngest/utils";
 import z from "zod";
 import prisma from "../lib/db";
 
@@ -47,8 +47,7 @@ export const codeAgent = inngest.createFunction(
             command: z.string(),
           }),
           handler: async ({ command }, { step }) => {
-            return await step?.run('teminal', async () => {
-              const buffers = { stdout: "", stderr: "" };
+            return await step?.run('terminal', async () => {              const buffers = { stdout: "", stderr: "" };
 
               try {
                 const sandbox = await getSandbox(sandboxId);
@@ -80,8 +79,7 @@ export const codeAgent = inngest.createFunction(
             )
           }),
           handler: async ({ files }, { step, network }:Tool.Options<agent>) => {
-            const newFiles = await step?.run("creteOrUpdate", async () => {
-              try {
+            const newFiles = await step?.run("createOrUpdate", async () => {              try {
                 const updateFiles = network.state.data.files || {};
                 const sandbox = await getSandbox(sandboxId);
                 for (const file of files) {
@@ -123,7 +121,7 @@ export const codeAgent = inngest.createFunction(
       ],
       lifecycle: {
         onResponse: async ({ result, network }) => {
-          const lastAssistantTextMessage = lastAssitantTextMessageContent(result)
+          const lastAssistantTextMessage = lastAssistantTextMessageContent(result)
 
           if (lastAssistantTextMessage && network) {
             if (lastAssistantTextMessage.includes("<task_summary>")) {
@@ -164,15 +162,14 @@ export const codeAgent = inngest.createFunction(
         return await prisma.message.create({
           data: {
             content: "something went wrong! try again.",
-            role: "ASSISTENT",
-            type: "ERROR"
-          }
+            role: "ASSISTANT",
+            type: "ERROR",          }
         })
       }
       return await prisma.message.create({
         data: {
           content: result.state.data.summary,
-          role: "ASSISTENT",
+          role: "ASSISTANT",
           type: "RESULT",
           fragment: {
             create: {
