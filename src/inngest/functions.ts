@@ -1,16 +1,21 @@
-import { gemini, createAgent, createTool, createNetwork } from "@inngest/agent-kit";
+import { gemini, createAgent, createTool, createNetwork, type Tool } from "@inngest/agent-kit";
 
 import { inngest } from "@/src/inngest/client";
 import { Sandbox } from 'e2b';
 import { PROMPT } from "@/src/prompt";
 
-import { getSandbox, lastAssitantTextMessageContent } from "@/src/inngest/utils";
+import { getSandbox, lastAssistantTextMessageContent } from "@/src/inngest/utils";
 import z from "zod";
+import prisma from "../lib/db";
 
+interface agent{
+  summary: string
+  files: {[path: string]: string}
+}
 
-export const helloWorld = inngest.createFunction(
-  { id: "hello-world" },
-  { event: "test/hello.world" },
+export const codeAgent = inngest.createFunction(
+  { id: "code-agent" },
+  { event: "code-agent/run" },
   async ({ event, step }) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
       try {
@@ -22,9 +27,9 @@ export const helloWorld = inngest.createFunction(
       }
     })
 
-    const summarizer = createAgent({
+    const summarizer = createAgent<agent>({
       name: "code-agent",
-      description: "Am exper coding agent",
+      description: "An exper coding agent",
       system: PROMPT,
       model: gemini({
         model: "gemini-2.0-flash-exp",
@@ -42,8 +47,7 @@ export const helloWorld = inngest.createFunction(
             command: z.string(),
           }),
           handler: async ({ command }, { step }) => {
-            return await step?.run('teminal', async () => {
-              const buffers = { stdout: "", stderr: "" };
+            return await step?.run('terminal', async () => {              const buffers = { stdout: "", stderr: "" };
 
               try {
                 const sandbox = await getSandbox(sandboxId);
@@ -74,9 +78,8 @@ export const helloWorld = inngest.createFunction(
               }),
             )
           }),
-          handler: async ({ files }, { step, network }) => {
-            const newFiles = await step?.run("creteOrUpdate", async () => {
-              try {
+          handler: async ({ files }, { step, network }:Tool.Options<agent>) => {
+            const newFiles = await step?.run("createOrUpdate", async () => {              try {
                 const updateFiles = network.state.data.files || {};
                 const sandbox = await getSandbox(sandboxId);
                 for (const file of files) {
@@ -118,7 +121,7 @@ export const helloWorld = inngest.createFunction(
       ],
       lifecycle: {
         onResponse: async ({ result, network }) => {
-          const lastAssistantTextMessage = lastAssitantTextMessageContent(result)
+          const lastAssistantTextMessage = lastAssistantTextMessageContent(result)
 
           if (lastAssistantTextMessage && network) {
             if (lastAssistantTextMessage.includes("<task_summary>")) {
@@ -130,7 +133,7 @@ export const helloWorld = inngest.createFunction(
       }
     });
 
-    const network = createNetwork({
+    const network = createNetwork<agent>({
       name: "coding-agent-network",
       agents: [summarizer],
       maxIter: 15,
@@ -144,7 +147,9 @@ export const helloWorld = inngest.createFunction(
     })
 
     // const prompt = "Create a responsive product card component with image, title, price, and add to cart button using TypeScript and Tailwind CSS";
-    const result = await network.run(event.data?.email);
+    const result = await network.run(event.data?.content);
+
+    const isError = !result.state.data.summary || Object.keys(result.state.data.files || {}).length === 0
 
     const sandboxURL = await step.run("get-sandbox-url", async () => {
       const sandbox = await getSandbox(sandboxId);
@@ -152,7 +157,32 @@ export const helloWorld = inngest.createFunction(
       return `https://${host}`
     })
 
-    
+    await step.run("save-result", async () => {
+      if (isError) {
+        return await prisma.message.create({
+          data: {
+            content: "something went wrong! try again.",
+            role: "ASSISTANT",
+            type: "ERROR",          }
+        })
+      }
+      return await prisma.message.create({
+        data: {
+          content: result.state.data.summary,
+          role: "ASSISTANT",
+          type: "RESULT",
+          fragment: {
+            create: {
+              sandboxUrl: sandboxURL,
+              title: "Fragment",
+              files: result.state.data.files
+            }
+          }
+        }
+      })
+    })
+
+
     const files = result?.state?.data?.files || {};
     const summary = result?.state?.data?.summary || "";
     return {

@@ -8,7 +8,7 @@ export const getSandbox = async (sandboxId: string) => {
 }
 
 
-export const lastAssitantTextMessageContent = (result: AgentResult) => {
+export const lastAssistantTextMessageContent = (result: AgentResult) => {
   if (!result.output || !Array.isArray(result.output)) return undefined;
 
   // Find last assistant message, not first (safer for real chats)

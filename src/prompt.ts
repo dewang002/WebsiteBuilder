@@ -105,8 +105,7 @@ File conventions:
 - Use PascalCase for component names, kebab-case for filenames
 - Use .tsx for components, .ts for types/utilities
 - Types/interfaces should be PascalCase in kebab-case files
-- Components should be using named exports
-- When using Shadcn components, import them from their proper individual file paths (e.g. @/components/ui/input)
+- Components should use default exports for pages and named exports for reusable components- When using Shadcn components, import them from their proper individual file paths (e.g. @/components/ui/input)
 
 Final output (MANDATORY):
 After ALL tool calls are 100% complete and the task is fully finished, respond with exactly the following format and NOTHING else:
